@@ -51,7 +51,49 @@ document.addEventListener("DOMContentLoaded", () => {
           participants.forEach((p) => {
             const li = document.createElement('li');
             li.className = 'participant-item';
-            li.textContent = p;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'participant-name';
+            nameSpan.textContent = p;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'participant-remove';
+            removeBtn.type = 'button';
+            removeBtn.title = `Remove ${p}`;
+            removeBtn.innerHTML = '&times;';
+
+            removeBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              if (!confirm(`Remove ${p} from ${name}?`)) return;
+              try {
+                const resp = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: 'POST' }
+                );
+                const resJson = await resp.json();
+                if (resp.ok) {
+                  messageDiv.textContent = resJson.message;
+                  messageDiv.className = 'success';
+                  messageDiv.classList.remove('hidden');
+                  fetchActivities();
+                } else {
+                  messageDiv.textContent = resJson.detail || 'Failed to remove participant';
+                  messageDiv.className = 'error';
+                  messageDiv.classList.remove('hidden');
+                }
+              } catch (err) {
+                console.error('Error unregistering participant:', err);
+                messageDiv.textContent = 'Failed to remove participant. Please try again.';
+                messageDiv.className = 'error';
+                messageDiv.classList.remove('hidden');
+              }
+              setTimeout(() => {
+                messageDiv.classList.add('hidden');
+              }, 5000);
+            });
+
+            li.appendChild(nameSpan);
+            li.appendChild(removeBtn);
             ul.appendChild(li);
           });
         }
